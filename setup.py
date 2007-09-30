@@ -7,6 +7,7 @@ def read(*rnames):
 setup(name='z3c.recipe.filetemplate',
       version = '1.0',
       license='ZPL 2.1',
+      url='http://pypi.python.org/pypi/z3c.recipe.filetemplate',
       description="zc.buildout recipe for creating files from file templates",
       author='Philipp von Weitershausen',
       author_email='philipp@weitershausen.de',
