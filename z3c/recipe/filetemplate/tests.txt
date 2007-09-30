@@ -1,0 +1,158 @@
+Tests
+=====
+
+This file contains doctests that are mainly test rather than
+documentation.  The documentation doctests can be found in README.txt
+
+Multiple files
+--------------
+
+The recipe can subsitute the same set of variables on several files at
+the same time:
+
+  >>> write(sample_buildout, 'helloworld.txt.in',
+  ... """
+  ... Hello ${world}!
+  ... """)
+
+  >>> write(sample_buildout, 'goodbyeworld.txt.in',
+  ... """
+  ... Goodbye ${world}!
+  ... """)
+
+File names are separated by any kind of whitespace:
+
+  >>> write(sample_buildout, 'buildout.cfg',
+  ... """
+  ... [buildout]
+  ... parts = multiple
+  ...
+  ... [multiple]
+  ... recipe = z3c.recipe.filetemplate
+  ... files = helloworld.txt
+  ...         goodbyeworld.txt
+  ... world = Philipp
+  ... """)
+
+After executing buildout, we can see that ``$world`` has indeed been
+replaced by ``Philipp``:
+
+  >>> print system(buildout)
+  Installing multiple.
+
+Absolute paths
+--------------
+
+The recipe only accepts relative file paths.  For example, consider
+this invalid buildout configuration:
+
+  >>> write(sample_buildout, 'buildout.cfg',
+  ... """
+  ... [buildout]
+  ... parts = evil
+  ...
+  ... [evil]
+  ... recipe = z3c.recipe.filetemplate
+  ... files = /etc/passwd.in
+  ... root = me
+  ... """)
+
+  >>> print system(buildout)
+  Uninstalling multiple.
+  Installing evil.
+  evil: /etc/passwd.in is an absolute path. File paths must be
+        relative to the buildout directory.
+  While:
+    Installing evil.
+  Error: /etc/passwd.in is an absolute path. File paths must be
+         relative to the buildout directory.
+
+
+Missing template
+----------------
+
+The recipe will also complain with an error if you specify a file name
+for which no template can be found:
+
+  >>> write(sample_buildout, 'buildout.cfg',
+  ... """
+  ... [buildout]
+  ... parts = notthere
+  ...
+  ... [notthere]
+  ... recipe = z3c.recipe.filetemplate
+  ... files = doesntexist
+  ... """)
+
+  >>> print system(buildout)
+  Installing notthere.
+  notthere: No template found at doesntexist.in.
+  While:
+    Installing notthere.
+  Error: No template found at doesntexist.in.
+
+
+Already existing file
+---------------------
+
+Another case where the recipe will complain is when you're trying to
+replace a file that's already there:
+
+  >>> write(sample_buildout, 'alreadyhere.txt',
+  ... """
+  ... I'm already here
+  ... """)
+
+  >>> write(sample_buildout, 'alreadyhere.txt.in',
+  ... """
+  ... I'm the template that's supposed to replace the file above.
+  ... """)
+
+  >>> write(sample_buildout, 'buildout.cfg',
+  ... """
+  ... [buildout]
+  ... parts = alreadythere
+  ...
+  ... [alreadythere]
+  ... recipe = z3c.recipe.filetemplate
+  ... files = alreadyhere.txt
+  ... """)
+
+  >>> print system(buildout)
+  Installing alreadythere.
+  alreadythere: File alreadyhere.txt already exists. Please make sure
+                that you really want to have it generated automatically.
+                Then move it away.
+  While:
+    Installing alreadythere.
+  Error: File alreadyhere.txt already exists. Please make sure
+         that you really want to have it generated automatically.
+         Then move it away.
+
+
+Missing variables
+-----------------
+
+The recipe will also fail to execute if a template refers to variables
+that aren't defined in ``buildout.cfg``:
+
+  >>> write(sample_buildout, 'missing.txt.in',
+  ... """
+  ... Hello ${world}!
+  ... """)
+
+  >>> write(sample_buildout, 'buildout.cfg',
+  ... """
+  ... [buildout]
+  ... parts = missing
+  ...
+  ... [missing]
+  ... recipe = z3c.recipe.filetemplate
+  ... files = missing.txt
+  ... """)
+
+  >>> print system(buildout)
+  Installing missing.
+  While:
+    Installing missing.
+  Error: Missing option: missing:world
