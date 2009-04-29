@@ -1,8 +1,9 @@
 import zc.buildout.testing
+import zc.buildout.tests
 from zope.testing import doctest
 
 def setUp(test):
-    zc.buildout.testing.buildoutSetUp(test)
+    zc.buildout.tests.easy_install_SetUp(test)
     zc.buildout.testing.install_develop('z3c.recipe.filetemplate', test)
 
 def test_suite():

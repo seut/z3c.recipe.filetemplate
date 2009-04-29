@@ -58,14 +58,12 @@ this invalid buildout configuration:
   ... """)
 
   >>> print system(buildout)
-  Uninstalling multiple.
-  Installing evil.
-  evil: /etc/passwd.in is an absolute path. File paths must be
-        relative to the buildout directory.
+  evil: /etc/passwd.in is an absolute path. Paths must be relative to the buildout directory.
   While:
-    Installing evil.
-  Error: /etc/passwd.in is an absolute path. File paths must be
-         relative to the buildout directory.
+    Installing.
+    Getting section evil.
+    Initializing part evil.
+  Error: /etc/passwd.in is an absolute path. Paths must be relative to the buildout directory.
 
 
 Missing template
@@ -85,11 +83,13 @@ for which no template can be found:
   ... """)
 
   >>> print system(buildout)
-  Installing notthere.
-  notthere: No template found at doesntexist.in.
+  notthere: No template found for these file names: doesntexist.in
   While:
-    Installing notthere.
-  Error: No template found at doesntexist.in.
+    Installing.
+    Getting section notthere.
+    Initializing part notthere.
+  Error: No template found for these file names: doesntexist.in
+
 
 
 Already existing file
@@ -119,15 +119,16 @@ replace a file that's already there:
   ... """)
 
   >>> print system(buildout)
+  Uninstalling multiple.
   Installing alreadythere.
-  alreadythere: File alreadyhere.txt already exists. Please make sure
-                that you really want to have it generated automatically.
-                Then move it away.
+  alreadythere: Destinations already exist: alreadyhere.txt.in. Please make
+                sure that you really want to generate these automatically.
+                Then move them away.
   While:
     Installing alreadythere.
-  Error: File alreadyhere.txt already exists. Please make sure
-         that you really want to have it generated automatically.
-         Then move it away.
+  Error: Destinations already exist: alreadyhere.txt.in. Please make sure
+         that you really want to generate these automatically.  Then move
+         them away.
 
 
 Missing variables
@@ -155,4 +156,5 @@ that aren't defined in ``buildout.cfg``:
   Installing missing.
   While:
     Installing missing.
-  Error: Missing option: missing:world
+  Error: Referenced option does not exist: missing world
+

@@ -27,6 +27,7 @@ setup(name='z3c.recipe.filetemplate',
       namespace_packages=['z3c', 'z3c.recipe'],
       install_requires=['setuptools',
                         'zc.buildout',
+                        'zc.recipe.egg',
                         ],
       zip_safe=True,
       entry_points="""
