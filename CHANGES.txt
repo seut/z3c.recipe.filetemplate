@@ -2,9 +2,6 @@
 Changes
 =======
 
-2.1 (unreleased)
-================
-
 2.0.1 (2009-04-30)
 ==================
 
@@ -15,6 +12,9 @@ Fixes
 - Correct sdist generation to include all necessary files.
 
 - Doc formatting fixes.
+
+- Correct "Destinations already exist" message to list destinations without
+  ``.in`` suffix.
 
 2.0 (2009-04-30)
 ================

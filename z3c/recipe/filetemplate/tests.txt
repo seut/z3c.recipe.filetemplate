@@ -118,12 +118,12 @@ replace a file that's already there:
     >>> print system(buildout)
     Uninstalling multiple.
     Installing alreadythere.
-    alreadythere: Destinations already exist: alreadyhere.txt.in. Please make
+    alreadythere: Destinations already exist: alreadyhere.txt. Please make
                   sure that you really want to generate these automatically.
                   Then move them away.
     While:
       Installing alreadythere.
-    Error: Destinations already exist: alreadyhere.txt.in. Please make sure
+    Error: Destinations already exist: alreadyhere.txt. Please make sure
            that you really want to generate these automatically.  Then move
            them away.
 

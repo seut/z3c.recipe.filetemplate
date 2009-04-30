@@ -186,7 +186,7 @@ class FileTemplate(object):
 
     def install(self):
         already_exists = [
-            rel_path for rel_path, last_mod, st_mode in self.actions
+                rel_path[:-3] for rel_path, last_mod, st_mode in self.actions
             if os.path.exists(
                 os.path.join(self.destination_dir, rel_path[:-3]))
             ]
