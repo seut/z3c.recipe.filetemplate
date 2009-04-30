@@ -10,35 +10,35 @@ Multiple files
 The recipe can subsitute the same set of variables on several files at
 the same time:
 
-  >>> write(sample_buildout, 'helloworld.txt.in',
-  ... """
-  ... Hello ${world}!
-  ... """)
-
-  >>> write(sample_buildout, 'goodbyeworld.txt.in',
-  ... """
-  ... Goodbye ${world}!
-  ... """)
+    >>> write(sample_buildout, 'helloworld.txt.in',
+    ... """
+    ... Hello ${world}!
+    ... """)
+  
+    >>> write(sample_buildout, 'goodbyeworld.txt.in',
+    ... """
+    ... Goodbye ${world}!
+    ... """)
 
 File names are separated by any kind of whitespace:
 
-  >>> write(sample_buildout, 'buildout.cfg',
-  ... """
-  ... [buildout]
-  ... parts = multiple
-  ...
-  ... [multiple]
-  ... recipe = z3c.recipe.filetemplate
-  ... files = helloworld.txt
-  ...         goodbyeworld.txt
-  ... world = Philipp
-  ... """)
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = multiple
+    ...
+    ... [multiple]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = helloworld.txt
+    ...         goodbyeworld.txt
+    ... world = Philipp
+    ... """)
 
 After executing buildout, we can see that ``$world`` has indeed been
 replaced by ``Philipp``:
 
-  >>> print system(buildout)
-  Installing multiple.
+    >>> print system(buildout)
+    Installing multiple.
 
 Absolute paths
 --------------
@@ -46,27 +46,24 @@ Absolute paths
 The recipe only accepts relative file paths.  For example, consider
 this invalid buildout configuration:
 
-  >>> write(sample_buildout, 'buildout.cfg',
-  ... """
-  ... [buildout]
-  ... parts = evil
-  ...
-  ... [evil]
-  ... recipe = z3c.recipe.filetemplate
-  ... files = /etc/passwd.in
-  ... root = me
-  ... """)
-
-  >>> print system(buildout)
-  Uninstalling multiple.
-  Installing evil.
-  evil: /etc/passwd.in is an absolute path. File paths must be
-        relative to the buildout directory.
-  While:
-    Installing evil.
-  Error: /etc/passwd.in is an absolute path. File paths must be
-         relative to the buildout directory.
-
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = evil
+    ...
+    ... [evil]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = /etc/passwd.in
+    ... root = me
+    ... """)
+  
+    >>> print system(buildout)
+    evil: /etc/passwd.in is an absolute path. Paths must be relative to the buildout directory.
+    While:
+      Installing.
+      Getting section evil.
+      Initializing part evil.
+    Error: /etc/passwd.in is an absolute path. Paths must be relative to the buildout directory.
 
 Missing template
 ----------------
@@ -74,23 +71,23 @@ Missing template
 The recipe will also complain with an error if you specify a file name
 for which no template can be found:
 
-  >>> write(sample_buildout, 'buildout.cfg',
-  ... """
-  ... [buildout]
-  ... parts = notthere
-  ...
-  ... [notthere]
-  ... recipe = z3c.recipe.filetemplate
-  ... files = doesntexist
-  ... """)
-
-  >>> print system(buildout)
-  Installing notthere.
-  notthere: No template found at doesntexist.in.
-  While:
-    Installing notthere.
-  Error: No template found at doesntexist.in.
-
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = notthere
+    ...
+    ... [notthere]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = doesntexist
+    ... """)
+  
+    >>> print system(buildout)
+    notthere: No template found for these file names: doesntexist.in
+    While:
+      Installing.
+      Getting section notthere.
+      Initializing part notthere.
+    Error: No template found for these file names: doesntexist.in
 
 Already existing file
 ---------------------
@@ -98,37 +95,37 @@ Already existing file
 Another case where the recipe will complain is when you're trying to
 replace a file that's already there:
 
-  >>> write(sample_buildout, 'alreadyhere.txt',
-  ... """
-  ... I'm already here
-  ... """)
+    >>> write(sample_buildout, 'alreadyhere.txt',
+    ... """
+    ... I'm already here
+    ... """)
+  
+    >>> write(sample_buildout, 'alreadyhere.txt.in',
+    ... """
+    ... I'm the template that's supposed to replace the file above.
+    ... """)
+  
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = alreadythere
+    ...
+    ... [alreadythere]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = alreadyhere.txt
+    ... """)
 
-  >>> write(sample_buildout, 'alreadyhere.txt.in',
-  ... """
-  ... I'm the template that's supposed to replace the file above.
-  ... """)
-
-  >>> write(sample_buildout, 'buildout.cfg',
-  ... """
-  ... [buildout]
-  ... parts = alreadythere
-  ...
-  ... [alreadythere]
-  ... recipe = z3c.recipe.filetemplate
-  ... files = alreadyhere.txt
-  ... """)
-
-  >>> print system(buildout)
-  Installing alreadythere.
-  alreadythere: File alreadyhere.txt already exists. Please make sure
-                that you really want to have it generated automatically.
-                Then move it away.
-  While:
+    >>> print system(buildout)
+    Uninstalling multiple.
     Installing alreadythere.
-  Error: File alreadyhere.txt already exists. Please make sure
-         that you really want to have it generated automatically.
-         Then move it away.
-
+    alreadythere: Destinations already exist: alreadyhere.txt.in. Please make
+                  sure that you really want to generate these automatically.
+                  Then move them away.
+    While:
+      Installing alreadythere.
+    Error: Destinations already exist: alreadyhere.txt.in. Please make sure
+           that you really want to generate these automatically.  Then move
+           them away.
 
 Missing variables
 -----------------
@@ -136,23 +133,235 @@ Missing variables
 The recipe will also fail to execute if a template refers to variables
 that aren't defined in ``buildout.cfg``:
 
-  >>> write(sample_buildout, 'missing.txt.in',
-  ... """
-  ... Hello ${world}!
-  ... """)
-
-  >>> write(sample_buildout, 'buildout.cfg',
-  ... """
-  ... [buildout]
-  ... parts = missing
-  ...
-  ... [missing]
-  ... recipe = z3c.recipe.filetemplate
-  ... files = missing.txt
-  ... """)
-
-  >>> print system(buildout)
-  Installing missing.
-  While:
+    >>> write(sample_buildout, 'missing.txt.in',
+    ... """
+    ... Hello ${world}!
+    ... """)
+  
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = missing
+    ...
+    ... [missing]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = missing.txt
+    ... """)
+  
+    >>> print system(buildout)
     Installing missing.
-  Error: Missing option: missing:world
+    While:
+      Installing missing.
+    Error: Referenced option does not exist: missing world
+
+No changes means just an update
+-------------------------------
+
+If there are no changes in the buildout section, or in the files it will build,
+the recipe will update, which is a no-op.
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = helloworld.txt
+    ... world = Philipp
+    ... """)
+
+    >>> print system(buildout)
+    Installing message.
+    >>> print system(buildout)
+    Updating message.
+
+Changes in a source directory cause a re-install
+------------------------------------------------
+
+The recipe keeps track of what files were installed, and so adding and removing
+files causes a reinstall with the expected behavior.
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... world = Philipp
+    ... """)
+    >>> mkdir(sample_buildout, 'template')
+    >>> mkdir(sample_buildout, 'template', 'etc')
+    >>> write(sample_buildout, 'template', 'etc', 'helloworld.sh.in',
+    ... """
+    ... Hello ${world} from the .sh file!
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout, 'etc')
+    -  helloworld.sh
+    >>> write(sample_buildout, 'template', 'etc', 'helloworld.conf.in',
+    ... """
+    ... Hello ${world} from the etc dir!
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout, 'etc')
+    -  helloworld.conf
+    -  helloworld.sh
+    >>> remove(sample_buildout, 'template', 'etc', 'helloworld.sh.in')
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout, 'etc')
+    -  helloworld.conf
+
+The main README also has an example of modifying a file, which will also cause
+a reinstall.
+
+More than one file in ``files`` with ``source-directory``
+---------------------------------------------------------
+
+When using ``source-directory``, ``files`` is a glob-based filter.  This is
+shown in the main README.  What is not shown is that you can have more than
+one ``files`` filter.  Here's an example.
+
+    >>> write(sample_buildout, 'template', 'etc', 'helloworld.sh.in',
+    ... """
+    ... Hello ${world} from the .sh file!
+    ... """)
+    >>> write(sample_buildout, 'template', 'etc', 'helloworld.cfg.in',
+    ... """
+    ... Hello ${world} from the .cfg file!
+    ... """)
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... files = *.conf
+    ...         helloworld.cfg
+    ... world = Philipp
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout, 'etc')
+    -  helloworld.cfg
+    -  helloworld.conf
+
+``files`` with a directory when using a ``source-directory``
+------------------------------------------------------------
+
+If you use a source directory and your ``files`` specify a directory, the
+directory must match precisely.
+
+    >>> mkdir(sample_buildout, 'template', 'etc', 'in')
+    >>> write(sample_buildout, 'template', 'etc', 'in', 'helloworld.cfg.in',
+    ... """
+    ... Hello ${world} from the inner .cfg file!
+    ... """)
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... files = *.sh
+    ...         etc/helloworld.cfg
+    ... world = Philipp
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout, 'etc')
+    -  helloworld.cfg
+    -  helloworld.sh
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... files = *.sh
+    ...         etc/in/helloworld.cfg
+    ... world = Philipp
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout, 'etc')
+    -  helloworld.sh
+    d  in
+    >>> ls(sample_buildout, 'etc', 'in')
+    -  helloworld.cfg
+
+This works with the ./ directory also, so you can specify a file in the root
+of the source directory.
+
+At the start, we have the ``etc`` directory but not ``helloworld.cfg``.
+
+    >>> ls(sample_buildout)
+    -  .installed.cfg
+    -  alreadyhere.txt
+    -  alreadyhere.txt.in
+    d  bin
+    -  buildout.cfg
+    d  develop-eggs
+    d  eggs
+    d  etc
+    -  goodbyeworld.txt.in
+    -  helloworld.txt.in
+    -  missing.txt.in
+    d  parts
+    d  template
+
+    >>> write(sample_buildout, 'template', 'helloworld.cfg.in',
+    ... """
+    ... Hello ${world} from the top-level .cfg file!
+    ... """)
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... files = ./helloworld.cfg
+    ... world = Philipp
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+
+Now the reverse is true.
+
+    >>> ls(sample_buildout)
+    -  .installed.cfg
+    -  alreadyhere.txt
+    -  alreadyhere.txt.in
+    d  bin
+    -  buildout.cfg
+    d  develop-eggs
+    d  eggs
+    -  goodbyeworld.txt.in
+    -  helloworld.cfg
+    -  helloworld.txt.in
+    -  missing.txt.in
+    d  parts
+    d  template
+
