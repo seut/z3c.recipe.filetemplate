@@ -1,3 +1,17 @@
+##############################################################################
+#
+# Copyright (c) 2007-2009 Zope Corporation and Contributors.
+# All Rights Reserved.
+#
+# This software is subject to the provisions of the Zope Public License,
+# Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
+# WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
+# FOR A PARTICULAR PURPOSE.
+#
+##############################################################################
+
 import fnmatch
 import logging
 import os
@@ -5,6 +19,7 @@ import re
 import stat
 import string
 import sys
+import traceback
 import zc.recipe.egg
 import zc.buildout
 import zc.buildout.easy_install
@@ -54,8 +69,8 @@ class FileTemplate(object):
             self.recursive = True
             if os.path.isabs(self.source_dir):
                 self._user_error(ABS_PATH_ERROR, self.source_dir)
-            self.source_dir = os.path.normpath(os.path.join(
-                here, self.source_dir))
+            self.source_dir = zc.buildout.easy_install.realpath(
+                os.path.normpath(os.path.join(here, self.source_dir)))
             if not self.source_dir.startswith(here):
                 self._user_error(
                     'source-directory must be within the buildout directory')
@@ -67,19 +82,12 @@ class FileTemplate(object):
         for filename in self.filenames:
             if os.path.isabs(filename):
                 self._user_error(ABS_PATH_ERROR, filename)
-            if self.source_dir:
-                if '/' in filename:
-                    self._user_error(
-                        'Slashes cannot be in file names when a source '
-                        'directory is used: %s.',
-                        filename)
-            else:
-                if not os.path.normpath(
-                    os.path.join(self.source_dir, filename)
-                    ).startswith(self.source_dir):
-                    # path used ../ to get out of buildout dir
-                    self._user_error(
-                        'source files must be within the buildout directory')
+            if not zc.buildout.easy_install.realpath(
+                os.path.normpath(os.path.join(self.source_dir, filename))
+                ).startswith(self.source_dir):
+                # path used ../ to get out of buildout dir
+                self._user_error(
+                    'source files must be within the buildout directory')
             source_patterns.append('%s.in' % filename)
         unmatched = set(source_patterns)
         unexpected_dirs = []
@@ -98,11 +106,19 @@ class FileTemplate(object):
                         file_info[name] = (
                             val, last_modified, statinfo.st_mode)
                 found = set()
-                for pattern in source_patterns:
-                    # val is relative to
+                for orig_pattern in source_patterns:
+                    parts = orig_pattern.split('/')
+                    dir = os.path.sep.join(parts[:-1])
+                    pattern = parts[-1]
+                    if (dir and
+                        relative_prefix != dir and
+                        dir != '.' and relative_prefix != ''):
+                        # if a directory is specified, it must match
+                        # precisely.  We also support the '.' directory.
+                        continue
                     matching = fnmatch.filter(file_info, pattern)
                     if matching:
-                        unmatched.discard(pattern)
+                        unmatched.discard(orig_pattern)
                         found.update(matching)
                 for name in found:
                     self.actions.append(file_info[name])
@@ -110,7 +126,8 @@ class FileTemplate(object):
                 self.source_dir, visit, None)
         else:
             for val in source_patterns:
-                source = os.path.join(self.source_dir, val)
+                source = zc.buildout.easy_install.realpath(
+                    os.path.join(self.source_dir, val))
                 if os.path.exists(source):
                     unmatched.discard(val)
                     statinfo = os.stat(source)
@@ -131,15 +148,37 @@ class FileTemplate(object):
             self._user_error(
                 'No template found for these file names: %s',
                 ', '.join(unmatched))
+        # parse interpreted options
         interpreted = self.options.get('interpreted-options')
         if interpreted:
             globs = {'__builtins__': __builtins__, 'os': os, 'sys': sys}
             locs = {'name': name, 'options': options, 'buildout': buildout,
                     'paths': paths, 'all_paths': all_paths}
-            for value in interpreted.split():
+            for value in interpreted.split('\n'):
                 if value:
-                    key, expression = value.split('=', 1)
-                    options[key] = str(eval(expression, globs, locs))
+                    value = value.split('=', 1)
+                    key = value[0].strip()
+                    if len(value) == 1:
+                        try:
+                            expression = options[key]
+                        except KeyError:
+                            self._user_error(
+                                'Expression for key not found: %s', key)
+                    else:
+                        expression = value[1]
+                    try:
+                        evaluated = eval(expression, globs, locs)
+                    except:
+                        self._user_error(
+                            'Error when evaluating %r expression %r:\n%s',
+                            key, expression, traceback.format_exc())
+                    if not isinstance(evaluated, basestring):
+                        self._user_error(
+                            'Result of evaluating Python expression must be a '
+                            'string.  The result of %r expression %r was %r, '
+                            'a %s.',
+                            key, expression, evaluated, type(evaluated))
+                    options[key] = evaluated
     def _user_error(self, msg, *args):
         msg = msg % args
         self.logger.error(msg)

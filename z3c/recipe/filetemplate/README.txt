@@ -70,8 +70,9 @@ and places it in the same folder relative to the buildout root.  However, if
 you don't want to clutter up the destination folder, you can add a prefix to
 the source folder.  Here is an example.
 
-Note that, for the destination, intermediate folders are created if they do not
-exist.
+First, we specify a ``source-directory`` in the buildout.  You can specify
+``files`` as a filter if desired, but by default it will find any file (ending
+with ".in").
 
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
@@ -83,6 +84,10 @@ exist.
     ... source-directory = template
     ... world = Philipp
     ... """)
+
+Now we'll make a "template" directory, as listed in the buildout configuration
+above, and populate it for our example.
+
     >>> mkdir(sample_buildout, 'template')
     >>> mkdir(sample_buildout, 'template', 'etc')
     >>> mkdir(sample_buildout, 'template', 'bin')
@@ -98,6 +103,11 @@ exist.
     ...     os.path.join(
     ...         sample_buildout, 'template', 'bin', 'helloworld.sh.in'),
     ...     0711)
+
+Notice that, before running buildout, the ``helloworld.txt`` file is still
+around, we don't have an etc directory, and the bin directory doesn't have our
+``helloworld.sh``.
+
     >>> ls(sample_buildout)
     -  .installed.cfg
     d  bin
@@ -110,6 +120,11 @@ exist.
     d  template
     >>> ls(sample_buildout, 'bin')
     -  buildout
+
+Now we install.  The old "helloworld.txt" is gone, and we now see etc.  Note
+that, for the destination, intermediate folders are created if they do not
+exist.
+
     >>> print system(buildout)
     Uninstalling message.
     Installing message.
@@ -123,6 +138,9 @@ exist.
     -  helloworld.txt.in
     d  parts
     d  template
+
+The files exist and have the content we expect.
+
     >>> ls(sample_buildout, 'bin')
     - buildout
     - helloworld.sh
@@ -136,11 +154,48 @@ exist.
     >>> cat(sample_buildout, 'etc', 'helloworld.conf')
     Hello Philipp from the etc dir!
 
+If you use the ``files`` option along with ``source-directory``, it becomes a
+filter.  Every target file must match at least one of the names in ``files``.
+Therefore, if we only build .sh files, the etc directory will disappear.
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... files = *.sh
+    ... world = Philipp
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout)
+    -  .installed.cfg
+    d  bin
+    -  buildout.cfg
+    d  develop-eggs
+    d  eggs
+    -  helloworld.txt.in
+    d  parts
+    d  template
+
+    >>> ls(sample_buildout, 'bin')
+    - buildout
+    - helloworld.sh
+
+Also note that, if you use a source directory and your ``files`` specify a
+directory, the directory must match precisely.
+
 Substituting from Other Sections
 ================================
 
 Substitutions can also come from other sections in the buildout, using the
-standard buildout syntax.
+standard buildout syntax, but used in the template.  Notice
+``${buildout:parts}`` in the template below.
 
     >>> write(sample_buildout, 'helloworld.txt.in',
     ... """
@@ -167,8 +222,8 @@ standard buildout syntax.
 Sharing variables
 =================
 
-The recipe allows extending one or more sections, to decrease repetition.  For
-instance, consider the following buildout.
+The recipe allows extending one or more sections, to decrease repetition, using
+the ``extends`` option.  For instance, consider the following buildout.
 
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
@@ -299,16 +354,61 @@ You can specify extra-paths as well, which will go at the end of the egg paths.
     ...demo... ...demoneeded... .../sample-buildout/foo
 
 Defining options in Python
-============================
+==========================
 
-You can specify that certain variables should be interpreted as Python.
+You can specify that certain variables should be interpreted as Python using
+``interpreted-options``.  This takes zero or more lines.  Each line should
+specify an option.  It can define immediately (see ``duplicate-os-paths``,
+``foo-paths``, and ``silly-range`` in the example below) or point to an option
+to be interepreted, which can be useful if you want to define a
+multi-line expression (see ``first-interpreted-option`` and
+``message-reversed-is-egassem``).
 
-XXX
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ... 
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = helloworld.txt
+    ... eggs = demo<0.3
+    ... interpreted-options = duplicate-os-paths=(os.pathsep).join(paths)
+    ...                       foo-paths='FOO'.join(all_paths)
+    ...                       silly-range = repr(range(5))
+    ...                       first-interpreted-option
+    ...                       message-reversed-is-egassem
+    ... first-interpreted-option = 
+    ...     options['interpreted-options'].split()[0].strip()
+    ... message-reversed-is-egassem=
+    ...     ''.join(
+    ...         reversed(
+    ...             buildout['buildout']['parts']))
+    ... not-interpreted=hello world
+    ...
+    ... find-links = %(server)s
+    ... index = %(server)s/index
+    ... """ % dict(server=link_server))
 
-    [buildout]
-    parts = message
-    
-    [message]
-    recipe = z3c.recipe.filetemplate
-    files = helloworld.txt
-    interpreted-options = path-separator=os.pathsep
+    >>> write(sample_buildout, 'helloworld.txt.in',
+    ... """
+    ... ${not-interpreted}!
+    ... duplicate-os-paths: ${duplicate-os-paths}
+    ... foo-paths: ${foo-paths}
+    ... silly-range: ${silly-range}
+    ... first-interpreted-option: ${first-interpreted-option}
+    ... message-reversed-is-egassem: ${message-reversed-is-egassem}
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+
+    >>> cat(sample_buildout, 'helloworld.txt') # doctest:+ELLIPSIS
+    hello world!
+    duplicate-os-paths: ...demo-0.2...egg:...demoneeded-1.2c1...egg
+    foo-paths: ...demo-0.2...eggFOO...demoneeded-1.2c1...egg
+    silly-range: [0, 1, 2, 3, 4]
+    first-interpreted-option: duplicate-os-paths=(os.pathsep).join(paths)
+    message-reversed-is-egassem: egassem
+
