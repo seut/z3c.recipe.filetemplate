@@ -277,9 +277,14 @@ predefined options will be available in the recipe's options for the template.
 If "paths" are the non-zip paths, and "all_paths" are all paths, then the
 options would be defined roughly as given here:
 
-    os-paths: (os.pathsep).join(paths)
-    string-paths: ', '.join(repr(p) for p in all_paths)
-    space-paths: ' '.join(paths)
+``os-paths``
+  ``(os.pathsep).join(paths)``
+  
+``string-paths``
+  ``', '.join(repr(p) for p in all_paths)``
+
+``space-paths``
+  ``' '.join(paths)``
 
 For instance, consider this example.
 
