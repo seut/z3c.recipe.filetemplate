@@ -309,3 +309,59 @@ directory must match precisely.
     >>> ls(sample_buildout, 'etc', 'in')
     -  helloworld.cfg
 
+This works with the ./ directory also, so you can specify a file in the root
+of the source directory.
+
+At the start, we have the ``etc`` directory but not ``helloworld.cfg``.
+
+    >>> ls(sample_buildout)
+    -  .installed.cfg
+    -  alreadyhere.txt
+    -  alreadyhere.txt.in
+    d  bin
+    -  buildout.cfg
+    d  develop-eggs
+    d  eggs
+    d  etc
+    -  goodbyeworld.txt.in
+    -  helloworld.txt.in
+    -  missing.txt.in
+    d  parts
+    d  template
+
+    >>> write(sample_buildout, 'template', 'helloworld.cfg.in',
+    ... """
+    ... Hello ${world} from the top-level .cfg file!
+    ... """)
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... files = ./helloworld.cfg
+    ... world = Philipp
+    ... """)
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+
+Now the reverse is true.
+
+    >>> ls(sample_buildout)
+    -  .installed.cfg
+    -  alreadyhere.txt
+    -  alreadyhere.txt.in
+    d  bin
+    -  buildout.cfg
+    d  develop-eggs
+    d  eggs
+    -  goodbyeworld.txt.in
+    -  helloworld.cfg
+    -  helloworld.txt.in
+    -  missing.txt.in
+    d  parts
+    d  template
+

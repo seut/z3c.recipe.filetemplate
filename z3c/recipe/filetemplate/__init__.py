@@ -112,7 +112,7 @@ class FileTemplate(object):
                     pattern = parts[-1]
                     if (dir and
                         relative_prefix != dir and
-                        dir != '.' and relative_prefix != ''):
+                        (dir != '.' or relative_prefix != '')):
                         # if a directory is specified, it must match
                         # precisely.  We also support the '.' directory.
                         continue
@@ -203,8 +203,11 @@ class FileTemplate(object):
             template=re.sub(r"\$\{([^:]+?)\}", r"${%s:\1}" % self.name,
                             template)
             self._create_paths(os.path.dirname(dest))
+            # we process the file first so that it won't be created if there
+            # is a problem.
+            processed = self.options._sub(template, [])
             result=open(dest, "wt")
-            result.write(self.options._sub(template, []))
+            result.write(processed)
             result.close()
             os.chmod(dest, mode)
             self.options.created(rel_path[:-3])

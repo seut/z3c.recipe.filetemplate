@@ -1,34 +1,37 @@
+=======
 Changes
 =======
 
 2.0 (2009-04-30)
-----------------
+================
 
-- FEATURE: Store your template files in a separate directory structure, using
-  the ``source-directory`` option.
+--------
+Features
+--------
 
-- FEATURE: Specify multiple files automatically with globs.
+- Store your template files in a separate directory structure, using the
+  ``source-directory`` option.
 
-- FEATURE: Templates can reference other buildout sections using the usual
-  syntax, e.g. ${buildout:parts}
+- Specify multiple files automatically with globs.
 
-- FEATURE: Share options with other sections using the typical ``extends``
-  option.
+- Templates can reference other buildout sections using the usual syntax, e.g.
+  ${buildout:parts}
 
-- FEATURE: Create destination directories automatically.
+- Share options with other sections using the typical ``extends`` option.
 
-- FEATURE: Define option values for templates dynamically in Python with the
+- Create destination directories automatically.
+
+- Define option values for templates dynamically in Python with the
   ``interpreted-options`` option.
 
-- FEATURE: Get paths for eggs by specifying ``eggs`` and ``extra-paths``, just
-  like zc.recipe.egg script recipe.  These are available in template options
-  in colon-delimited, space-delimited, and quoted variants.  You can also build
+- Get paths for eggs by specifying ``eggs`` and ``extra-paths``, just like
+  zc.recipe.egg script recipe.  These are available in template options in
+  colon-delimited, space-delimited, and quoted variants.  You can also build
   your own using the ``interpreted-options`` feature.
 
-- BUGFIX: templates are not processed if there are no changes to them or the
-  buildout.
+- Templates are not processed if there are no changes to them or the buildout.
 
 1.0 (2007-09-30)
-----------------
+================
 
 Initial release.

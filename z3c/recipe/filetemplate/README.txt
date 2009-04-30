@@ -10,6 +10,11 @@ the generation of text files from templates.  Upon execution, the
 recipe will read a number of template files, perform variable
 substitution and write the result to the corresponding output files.
 
+The recipe has several features, but it always takes template files with a
+``.in`` suffix, processes the template, and writes out the file to the desired
+location with the same file mode, and the same name but without the ``.in``
+suffix.
+
 For example, consider this simple template for a text file:
 
     >>> write(sample_buildout, 'helloworld.txt.in',
@@ -189,6 +194,10 @@ Therefore, if we only build .sh files, the etc directory will disappear.
 
 Also note that, if you use a source directory and your ``files`` specify a
 directory, the directory must match precisely.
+
+==============
+Advanced Usage
+==============
 
 Substituting from Other Sections
 ================================
