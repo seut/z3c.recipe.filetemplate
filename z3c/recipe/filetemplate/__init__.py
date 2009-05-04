@@ -50,7 +50,6 @@ class FileTemplate(object):
             all_paths = [
                 zc.buildout.easy_install.realpath(dist.location)
                 for dist in ws]
-            all_paths.sort()
             all_paths.extend(
                 zc.buildout.easy_install.realpath(path)
                 for path in self.eggs.extra_paths)
