@@ -62,7 +62,8 @@ class FileTemplate(object):
         # get and check the files to be created
         self.filenames = self.options.get('files', '*').split()
         self.source_dir = self.options.get('source-directory', '').strip()
-        here = self.buildout['buildout']['directory']
+        here = zc.buildout.easy_install.realpath(
+            self.buildout['buildout']['directory'])
         self.destination_dir = here
         if self.source_dir:
             self.recursive = True

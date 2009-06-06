@@ -5,7 +5,14 @@ Changes
 2.1 (unreleased)
 ================
 
+-----
+Fixes
+-----
 
+- Use ``realpath`` helper function from zc.buildout on the buildout
+  directory too, such that it goes through the same normalization as
+  the path being compared and stands a chance of working on Windows,
+  due to possible drive letter case differences.
 
 2.0.2 (2009-05-04)
 ==================
