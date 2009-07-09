@@ -40,7 +40,7 @@ Those will be used to fill the variables in the template:
     ... world = Philipp
     ... """)
 
-After executing buildout, we can see that ``$world`` has indeed been
+After executing buildout, we can see that ``${world}`` has indeed been
 replaced by ``Philipp``:
 
     >>> print system(buildout)
@@ -48,6 +48,37 @@ replaced by ``Philipp``:
 
     >>> cat(sample_buildout, 'helloworld.txt')
     Hello Philipp!
+
+If the option name does not have a space or a period in it, you do not need the
+braces in the template.  Notice this example uses "$world" not "${world}" for
+the same result as before.
+
+    >>> write_and_wait(sample_buildout, 'helloworld.txt.in',
+    ... """
+    ... Hi $world!
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+
+    >>> cat(sample_buildout, 'helloworld.txt')
+    Hi Philipp!
+
+You can escape the dollar sign by repeating it, as with the Python string
+template class.
+
+    >>> write_and_wait(sample_buildout, 'helloworld.txt.in',
+    ... """
+    ... Hello $$$world! The double $${dollar-sign} escapes!
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+
+    >>> cat(sample_buildout, 'helloworld.txt')
+    Hello $Philipp! The double ${dollar-sign} escapes!
 
 Note that the output file uses the same permission bits as found on the input
 file.
@@ -327,13 +358,20 @@ For instance, consider this example.
     >>> cat(sample_buildout, 'helloworld.txt') # doctest:+ELLIPSIS
     Hello!  Here are the paths for the demo<0.3 eggs.
     OS paths:
-    .../eggs/demo-0.2...egg:.../eggs/demoneeded-1.2c1...egg
+    .../eggs/demo-0.2...egg:.../eggs/demoneeded-1.2c1...egg:...
     ---
     String paths:
-    '.../eggs/demo-0.2...egg', '.../eggs/demoneeded-1.2c1...egg'
+    '.../eggs/demo-0.2...egg', '.../eggs/demoneeded-1.2c1...egg', '...'
     ---
     Space paths:
-    .../eggs/demo-0.2...egg .../eggs/demoneeded-1.2c1...egg
+    .../eggs/demo-0.2...egg .../eggs/demoneeded-1.2c1...egg ...
+
+Notice that included multiple paths.  In fact, it includes the site packages
+and the standard library, so these are appropriate for entirely replacing
+sys.path.
+
+You can eliminate the site packages from the paths by specifying
+"include-site-packages = false" in the buildout or the specific section.
 
 You can specify extra-paths as well, which will go at the end of the egg paths.
 
@@ -359,13 +397,13 @@ You can specify extra-paths as well, which will go at the end of the egg paths.
     >>> cat(sample_buildout, 'helloworld.txt') # doctest:+ELLIPSIS
     Hello!  Here are the paths for the demo<0.3 eggs.
     OS paths:
-    ...demo...:...demoneeded...:.../sample-buildout/foo
+    ...demo...:...demoneeded...:.../sample-buildout/foo:...
     ---
     String paths:
-    '...demo...', '...demoneeded...', '.../sample-buildout/foo'
+    '...demo...', '...demoneeded...', '.../sample-buildout/foo', '...'
     ---
     Space paths:
-    ...demo... ...demoneeded... .../sample-buildout/foo
+    ...demo... ...demoneeded... .../sample-buildout/foo ...
 
 Defining options in Python
 ==========================
@@ -420,8 +458,8 @@ multi-line expression (see ``first-interpreted-option`` and
 
     >>> cat(sample_buildout, 'helloworld.txt') # doctest:+ELLIPSIS
     hello world!
-    duplicate-os-paths: ...demo-0.2...egg:...demoneeded-1.2c1...egg
-    foo-paths: ...demo-0.2...eggFOO...demoneeded-1.2c1...egg
+    duplicate-os-paths: ...demo-0.2...egg:...demoneeded-1.2c1...egg:...
+    foo-paths: ...demo-0.2...eggFOO...demoneeded-1.2c1...eggFOO...
     silly-range: [0, 1, 2, 3, 4]
     first-interpreted-option: duplicate-os-paths=(os.pathsep).join(paths)
     message-reversed-is-egassem: egassem

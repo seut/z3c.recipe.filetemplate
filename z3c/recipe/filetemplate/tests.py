@@ -12,12 +12,24 @@
 #
 ##############################################################################
 
+import os
 import zc.buildout.testing
 import zc.buildout.tests
 from zope.testing import doctest
 
+def write_and_wait(dir, *args):
+    path = os.path.join(dir, *(args[:-1]))
+    original = os.stat(path).st_mtime
+    while os.stat(path).st_mtime == original:
+        f = open(path, 'w')
+        f.write(args[-1])
+        f.flush()
+        os.fsync(f.fileno())
+        f.close()
+
 def setUp(test):
     zc.buildout.tests.easy_install_SetUp(test)
+    test.globs['write_and_wait'] = write_and_wait
     zc.buildout.testing.install_develop('z3c.recipe.filetemplate', test)
 
 def test_suite():

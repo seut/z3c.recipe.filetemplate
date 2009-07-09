@@ -22,6 +22,7 @@ import sys
 import traceback
 import zc.recipe.egg
 import zc.buildout
+import zc.buildout.buildout
 import zc.buildout.easy_install
 
 ABS_PATH_ERROR = ('%s is an absolute path. Paths must be '
@@ -44,15 +45,21 @@ class FileTemplate(object):
             self.options.setdefault(key, value)
         # set up paths for eggs, if given
         if 'eggs' in self.options:
+            relative_paths = self.options.get(
+                'relative-paths', 
+                buildout['buildout'].get('relative-paths', 'false')
+                )
+            if relative_paths != 'false':
+                self._user_error(
+                    'This recipe does not support relative-paths.')
+                # Why? Because the relative path tricks rely on Python
+                # at runtime, and we're offering path values for arbitrary
+                # files (for instance, including bash files).
             self.eggs = zc.recipe.egg.Scripts(buildout, name, options)
             orig_distributions, ws = self.eggs.working_set()
-            # we want ws, eggs.extra_paths, eggs._relative_paths
-            all_paths = [
-                zc.buildout.easy_install.realpath(dist.location)
-                for dist in ws]
-            all_paths.extend(
-                zc.buildout.easy_install.realpath(path)
-                for path in self.eggs.extra_paths)
+            all_paths = zc.buildout.easy_install.get_path(
+                ws, self.options['executable'], self.eggs.extra_paths,
+                self.eggs.include_site_packages)
         else:
             all_paths = []
         paths = [path for path in all_paths if not path.endswith('.zip')]
@@ -195,17 +202,17 @@ class FileTemplate(object):
                 'Destinations already exist: %s. Please make sure that '
                 'you really want to generate these automatically.  Then '
                 'move them away.', ', '.join(already_exists))
+        seen = [] # we throw this away right now, but could move this up
+        # to __init__ if valuable.
         for rel_path, last_mod, st_mode in self.actions:
             source = os.path.join(self.source_dir, rel_path)
             dest = os.path.join(self.destination_dir, rel_path[:-3])
             mode=stat.S_IMODE(st_mode)
             template=open(source).read()
-            template=re.sub(r"\$\{([^:]+?)\}", r"${%s:\1}" % self.name,
-                            template)
-            self._create_paths(os.path.dirname(dest))
             # we process the file first so that it won't be created if there
             # is a problem.
-            processed = self.options._sub(template, [])
+            processed = Template(template).substitute(self, seen)
+            self._create_paths(os.path.dirname(dest))
             result=open(dest, "wt")
             result.write(processed)
             result.close()
@@ -221,3 +228,70 @@ class FileTemplate(object):
 
     def update(self):
         pass
+
+
+class Template:
+    # hacked from string.Template
+    pattern = re.compile(r"""
+    \$(?:
+      (?P<escaped>\$) |                   # Escape sequence of two delimiters.
+      (?P<named>[-a-z0-9_]+) |           # Delimiter and a local option without
+                                         # space or period.
+      {(?P<braced_single>[-a-z0-9 ._]+)} |
+                                         # Delimiter and a braced local option
+      {(?P<braced_double>[-a-z0-9 ._]+:[-a-z0-9 ._]+)} |
+                                         # Delimiter and a braced fully
+                                         # qualified option (that is, with
+                                         # explicit section).
+      (?P<invalid>)                      # Other ill-formed delimiter exprs.
+    )
+    """, re.IGNORECASE | re.VERBOSE)
+
+    def __init__(self, template):
+        self.template = template
+
+    # Search for $$, $identifier, ${identifier}, and any bare $'s
+
+    def _invalid(self, mo):
+        i = mo.start('invalid')
+        lines = self.template[:i].splitlines(True)
+        if not lines:
+            colno = 1
+            lineno = 1
+        else:
+            colno = i - len(''.join(lines[:-1]))
+            lineno = len(lines)
+        raise ValueError('Invalid placeholder %r in string: line %d, col %d' %
+                         (mo.group('invalid'), lineno, colno))
+
+    def _get(self, options, section, option, seen):
+        value = options.get(option, None, seen)
+        if value is None:
+            raise zc.buildout.buildout.MissingOption(
+                "Referenced option does not exist:", section, option)
+        return value
+
+    def substitute(self, recipe, seen):
+        # Helper function for .sub()
+        def convert(mo):
+            # Check the most common path first.
+            local = mo.group('named') or mo.group('braced_single')
+            if local is not None:
+                val = self._get(recipe.options, recipe.name, local, seen)
+                # We use this idiom instead of str() because the latter will
+                # fail if val is a Unicode containing non-ASCII characters.
+                return '%s' % (val,)
+            double = mo.group('braced_double')
+            if double is not None:
+                section, option = double.split(':')
+                val = self._get(
+                    recipe.buildout[section], section, option, seen)
+                return '%s' % (val,)
+            if mo.group('escaped') is not None:
+                return '$'
+            if mo.group('invalid') is not None:
+                self._invalid(mo)
+            raise ValueError('Unrecognized named group in pattern',
+                             self.pattern) # programmer error, AFAICT
+        return self.pattern.sub(convert, self.template)
+    

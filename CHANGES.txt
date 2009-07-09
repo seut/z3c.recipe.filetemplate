@@ -9,7 +9,27 @@ Changes
 Features
 --------
 
-- None yet.
+- Support the new zc.buildout 1.4.0+ include-site-packages option.
+
+- Use the new zc.buildout 1.4.0+ path sorting algorithm, which puts
+  site-package dependency paths after the other dependency paths (but before
+  extra paths, as before).  This can reduce or eliminate problems with
+  packages in site-packages causing other dependencies to be masked with the
+  versions in site-packages.
+
+- Support escaping "$" with "$$" in templates.  This is particularly useful
+  for *NIX shell scripts.
+
+- Support specifying local options in templates without braces (e.g.,
+  "Hello $world" is now equivalent to "Hello ${world}".
+
+-----
+Fixes
+-----
+
+- Clarify that the recipe does not support the relative-paths options.
+
+- Make tests less susceptible to timing errors.
 
 
 2.0.3 (2009-07-02)
