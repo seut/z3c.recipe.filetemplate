@@ -148,11 +148,12 @@ that aren't defined in ``buildout.cfg``:
     ... files = missing.txt
     ... """)
   
-    >>> print system(buildout)
+    >>> print system(buildout) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     Installing missing.
     While:
       Installing missing.
-    Error: Referenced option does not exist: missing world
+    Error: Option 'missing:world', referenced in line 2, col 8 of
+           .../sample-buildout/missing.txt.in, does not exist.
 
 No changes means just an update
 -------------------------------

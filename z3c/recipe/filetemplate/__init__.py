@@ -202,16 +202,18 @@ class FileTemplate(object):
                 'Destinations already exist: %s. Please make sure that '
                 'you really want to generate these automatically.  Then '
                 'move them away.', ', '.join(already_exists))
-        seen = [] # we throw this away right now, but could move this up
-        # to __init__ if valuable.
+        seen = [] # we throw this away right now, but could move template
+        # processing up to __init__ if valuable.  That would mean that templates
+        # would be rewritten even if a value in another section had been
+        # referenced; however, it would also mean that __init__ would do
+        # virtually all of the work, with install only doing the writing.
         for rel_path, last_mod, st_mode in self.actions:
             source = os.path.join(self.source_dir, rel_path)
             dest = os.path.join(self.destination_dir, rel_path[:-3])
             mode=stat.S_IMODE(st_mode)
-            template=open(source).read()
             # we process the file first so that it won't be created if there
             # is a problem.
-            processed = Template(template).substitute(self, seen)
+            processed = Template(source).substitute(self, seen)
             self._create_paths(os.path.dirname(dest))
             result=open(dest, "wt")
             result.write(processed)
@@ -234,26 +236,22 @@ class Template:
     # hacked from string.Template
     pattern = re.compile(r"""
     \$(?:
-      (?P<escaped>\$) |                   # Escape sequence of two delimiters.
-      (?P<named>[-a-z0-9_]+) |           # Delimiter and a local option without
-                                         # space or period.
+      \${(?P<escaped>[^}]*)} |                   # Escape sequence of two delimiters.
       {(?P<braced_single>[-a-z0-9 ._]+)} |
                                          # Delimiter and a braced local option
       {(?P<braced_double>[-a-z0-9 ._]+:[-a-z0-9 ._]+)} |
                                          # Delimiter and a braced fully
                                          # qualified option (that is, with
                                          # explicit section).
-      (?P<invalid>)                      # Other ill-formed delimiter exprs.
+      {(?P<invalid>[^}]*})               # Other ill-formed delimiter exprs.
     )
     """, re.IGNORECASE | re.VERBOSE)
 
-    def __init__(self, template):
-        self.template = template
+    def __init__(self, source):
+        self.source = source
+        self.template = open(source).read()
 
-    # Search for $$, $identifier, ${identifier}, and any bare $'s
-
-    def _invalid(self, mo):
-        i = mo.start('invalid')
+    def _get_colno_lineno(self, i):
         lines = self.template[:i].splitlines(True)
         if not lines:
             colno = 1
@@ -261,36 +259,44 @@ class Template:
         else:
             colno = i - len(''.join(lines[:-1]))
             lineno = len(lines)
-        raise ValueError('Invalid placeholder %r in string: line %d, col %d' %
-                         (mo.group('invalid'), lineno, colno))
+        return colno, lineno
 
-    def _get(self, options, section, option, seen):
+    def _get(self, options, section, option, seen, start):
         value = options.get(option, None, seen)
         if value is None:
+            colno, lineno = self._get_colno_lineno(start)
             raise zc.buildout.buildout.MissingOption(
-                "Referenced option does not exist:", section, option)
+                "Option '%s:%s', referenced in line %d, col %d of %s, "
+                "does not exist." %
+                (section, option, lineno, colno, self.source))
         return value
 
     def substitute(self, recipe, seen):
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
-            local = mo.group('named') or mo.group('braced_single')
-            if local is not None:
-                val = self._get(recipe.options, recipe.name, local, seen)
+            option = mo.group('braced_single')
+            if option is not None:
+                val = self._get(recipe.options, recipe.name, option, seen,
+                                mo.start('braced_single'))
                 # We use this idiom instead of str() because the latter will
                 # fail if val is a Unicode containing non-ASCII characters.
                 return '%s' % (val,)
             double = mo.group('braced_double')
             if double is not None:
                 section, option = double.split(':')
-                val = self._get(
-                    recipe.buildout[section], section, option, seen)
+                val = self._get(recipe.buildout[section], section, option, seen,
+                                mo.start('braced_double'))
                 return '%s' % (val,)
-            if mo.group('escaped') is not None:
-                return '$'
-            if mo.group('invalid') is not None:
-                self._invalid(mo)
+            escaped = mo.group('escaped')
+            if escaped is not None:
+                return '${%s}' % (escaped,)
+            invalid = mo.group('invalid')
+            if invalid is not None:
+                colno, lineno = self._get_colno_lineno(mo.start('invalid'))
+                raise ValueError(
+                    'Invalid placeholder %r in line %d, col %d of %s' %
+                    (mo.group('invalid'), lineno, colno, self.source))
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern) # programmer error, AFAICT
         return self.pattern.sub(convert, self.template)

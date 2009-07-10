@@ -49,13 +49,12 @@ replaced by ``Philipp``:
     >>> cat(sample_buildout, 'helloworld.txt')
     Hello Philipp!
 
-If the option name does not have a space or a period in it, you do not need the
-braces in the template.  Notice this example uses "$world" not "${world}" for
-the same result as before.
+If you need to escape the ${...} pattern, you can do so by repeating the dollar
+sign.
 
     >>> write_and_wait(sample_buildout, 'helloworld.txt.in',
     ... """
-    ... Hi $world!
+    ... Hello world! The double $${dollar-sign} escapes!
     ... """)
 
     >>> print system(buildout)
@@ -63,14 +62,13 @@ the same result as before.
     Installing message.
 
     >>> cat(sample_buildout, 'helloworld.txt')
-    Hi Philipp!
+    Hello world! The double ${dollar-sign} escapes!
 
-You can escape the dollar sign by repeating it, as with the Python string
-template class.
+Note that dollar signs alone, without curly braces, are not parsed.
 
     >>> write_and_wait(sample_buildout, 'helloworld.txt.in',
     ... """
-    ... Hello $$$world! The double $${dollar-sign} escapes!
+    ... $Hello $$world! $$$profit!
     ... """)
 
     >>> print system(buildout)
@@ -78,7 +76,7 @@ template class.
     Installing message.
 
     >>> cat(sample_buildout, 'helloworld.txt')
-    Hello $Philipp! The double ${dollar-sign} escapes!
+    $Hello $$world! $$$profit!
 
 Note that the output file uses the same permission bits as found on the input
 file.

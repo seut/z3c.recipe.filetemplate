@@ -17,11 +17,8 @@ Features
   packages in site-packages causing other dependencies to be masked with the
   versions in site-packages.
 
-- Support escaping "$" with "$$" in templates.  This is particularly useful
-  for *NIX shell scripts.
-
-- Support specifying local options in templates without braces (e.g.,
-  "Hello $world" is now equivalent to "Hello ${world}".
+- Support escaping "${...}" with "$${...}" in templates.  This is particularly
+  useful for *NIX shell scripts.
 
 -----
 Fixes
