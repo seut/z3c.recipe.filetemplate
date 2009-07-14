@@ -202,7 +202,7 @@ class FileTemplate(object):
                 'Destinations already exist: %s. Please make sure that '
                 'you really want to generate these automatically.  Then '
                 'move them away.', ', '.join(already_exists))
-        seen = [] # we throw this away right now, but could move template
+        seen = [] # We throw this away right now, but could move template
         # processing up to __init__ if valuable.  That would mean that templates
         # would be rewritten even if a value in another section had been
         # referenced; however, it would also mean that __init__ would do
@@ -300,4 +300,4 @@ class Template:
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern) # programmer error, AFAICT
         return self.pattern.sub(convert, self.template)
-    
+
