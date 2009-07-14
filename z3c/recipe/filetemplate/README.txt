@@ -52,7 +52,7 @@ replaced by ``Philipp``:
 If you need to escape the ${...} pattern, you can do so by repeating the dollar
 sign.
 
-    >>> write_and_wait(sample_buildout, 'helloworld.txt.in',
+    >>> update_file(sample_buildout, 'helloworld.txt.in',
     ... """
     ... Hello world! The double $${dollar-sign} escapes!
     ... """)
@@ -66,7 +66,7 @@ sign.
 
 Note that dollar signs alone, without curly braces, are not parsed.
 
-    >>> write_and_wait(sample_buildout, 'helloworld.txt.in',
+    >>> update_file(sample_buildout, 'helloworld.txt.in',
     ... """
     ... $Hello $$world! $$$profit!
     ... """)
