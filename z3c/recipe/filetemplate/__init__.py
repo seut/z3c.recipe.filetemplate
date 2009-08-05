@@ -57,9 +57,12 @@ class FileTemplate(object):
                 # files (for instance, including bash files).
             self.eggs = zc.recipe.egg.Scripts(buildout, name, options)
             orig_distributions, ws = self.eggs.working_set()
+            include_site_packages = options.get(
+                'include-site-packages',
+                buildout['buildout']['include-site-packages'])
             all_paths = zc.buildout.easy_install.get_path(
                 ws, self.options['executable'], self.eggs.extra_paths,
-                self.eggs.include_site_packages)
+                include_site_packages)
         else:
             all_paths = []
         paths = [path for path in all_paths if not path.endswith('.zip')]
