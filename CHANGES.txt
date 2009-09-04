@@ -5,17 +5,30 @@ Changes
 2.1.0 (Unreleased)
 ==================
 
+Requires zc.buildout 1.5.0 or greater.
+
 --------
 Features
 --------
 
-- Support the new zc.buildout 1.4.0+ include-site-packages option.
+- Support the new zc.buildout 1.5.0+ include-site-packages option.
 
-- Use the new zc.buildout 1.4.0+ path sorting algorithm, which puts
+- Use the new zc.buildout 1.5.0+ path sorting algorithm, which puts
   site-package dependency paths after the other dependency paths (but before
   extra paths, as before).  This can reduce or eliminate problems with
   packages in site-packages causing other dependencies to be masked with the
   versions in site-packages.
+
+- In addition to ``os-paths``, ``string-paths``, and ``space-paths``,
+  templates can now also use ``os-stdlib-paths``, ``os-egg-paths``,
+  ``os-dir-paths``, and their ``string-``* and ``space-``* parallels. 
+  ``stdlib-paths`` are the paths for the executable's standard library. 
+  ``egg-paths`` are the paths to the standalone eggs for the dependencies.
+  ``dir-paths`` are the paths to directories such as ``site-packages`` and
+  directories added via ``extra-paths``; if added to the sys.path via
+  direct manipulation of the sys.path list in Python, you usually should
+  call ``site.addsitedir`` for each path in dir-paths to make sure that
+  .pth files are processed.
 
 - Support escaping "${...}" with "$${...}" in templates.  This is particularly
   useful for *NIX shell scripts.

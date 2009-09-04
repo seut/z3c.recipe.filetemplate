@@ -301,19 +301,57 @@ section, and overwritten locally.  A template of
 Specifying paths
 ================
 
-You can specify eggs and extra-paths in the recipe.  If you do, three
-predefined options will be available in the recipe's options for the template.
-If "paths" are the non-zip paths, and "all_paths" are all paths, then the
-options would be defined roughly as given here:
+You can specify eggs and extra-paths in the recipe.  If you do, several
+predefined options will be available in the recipe's options for the
+template. These are the combination of two sets.  First, consider
+"stdlib_paths" to be the paths for the standard library, "egg_paths" to
+be the paths for the paths for standalone eggs, "dir_paths" to be the
+paths for directories that might contain .pth files (like site-packages
+or directories added with extra-paths), and "all_paths" to be the
+combination of all three in the order of egg_paths, dir_paths, and
+stdlib_paths.  Then combine those with three variants: "os" paths,
+joined by os.pathsep; "string" paths, quoted paths separated by strings,
+suitable for Python lists; and "space" paths, joined by a space.  The
+results of the combination are defined roughly as given here.
 
 ``os-paths``
-  ``(os.pathsep).join(paths)``
+  ``(os.pathsep).join(all_paths)``
   
 ``string-paths``
   ``', '.join(repr(p) for p in all_paths)``
 
 ``space-paths``
-  ``' '.join(paths)``
+  ``' '.join(all_paths)``
+
+``os-stdlib-paths``
+  ``(os.pathsep).join(stdlib_paths)``
+  
+``string-stdlib-paths``
+  ``', '.join(repr(p) for p in stdlib_paths)``
+
+``space-stdlib-paths``
+  ``' '.join(stdlib_paths)``
+
+``os-egg-paths``
+  ``(os.pathsep).join(egg_paths)``
+  
+``string-egg-paths``
+  ``', '.join(repr(p) for p in egg_paths)``
+
+``space-egg-paths``
+  ``' '.join(egg_paths)``
+
+``os-dir-paths``
+  ``(os.pathsep).join(dir_paths)``
+  
+``string-dir-paths``
+  ``', '.join(repr(p) for p in dir_paths)``
+
+``space-dir-paths``
+  ``' '.join(dir_paths)``
+
+(Note that you can work with the different path lists in different ways
+with the interpreted options described in the section below.)  
 
 For instance, consider this example.
 
@@ -343,6 +381,33 @@ For instance, consider this example.
     ... ---
     ... Space paths:
     ... ${space-paths}
+    ... ---
+    ... OS stdlib paths:
+    ... ${os-stdlib-paths}
+    ... ---
+    ... String stdlib paths:
+    ... ${string-stdlib-paths}
+    ... ---
+    ... Space stdlib paths:
+    ... ${space-stdlib-paths}
+    ... ---
+    ... OS egg paths:
+    ... ${os-egg-paths}
+    ... ---
+    ... String egg paths:
+    ... ${string-egg-paths}
+    ... ---
+    ... Space egg paths:
+    ... ${space-egg-paths}
+    ... ---
+    ... OS dir paths:
+    ... ${os-dir-paths}
+    ... ---
+    ... String dir paths:
+    ... ${string-dir-paths}
+    ... ---
+    ... Space dir paths:
+    ... ${space-dir-paths}
     ... """)
 
     >>> print system(buildout)
@@ -402,6 +467,33 @@ You can specify extra-paths as well, which will go at the end of the egg paths.
     ---
     Space paths:
     ...demo... ...demoneeded... .../sample-buildout/foo ...
+    ---
+    OS stdlib paths:
+    ...:...
+    ---
+    String stdlib paths:
+    '...', ...
+    ---
+    Space stdlib paths:
+    ... ...
+    ---
+    OS egg paths:
+    ...demo...:...demoneeded...
+    ---
+    String egg paths:
+    '...demo...', '...demoneeded...'
+    ---
+    Space egg paths:
+    ...demo... ...demoneeded...
+    ---
+    OS dir paths:
+    .../sample-buildout/foo:...
+    ---
+    String dir paths:
+    '.../sample-buildout/foo', ...
+    ---
+    Space dir paths:
+     .../sample-buildout/foo ...
 
 Defining options in Python
 ==========================
@@ -413,6 +505,27 @@ specify an option.  It can define immediately (see ``duplicate-os-paths``,
 to be interepreted, which can be useful if you want to define a
 multi-line expression (see ``first-interpreted-option`` and
 ``message-reversed-is-egassem``).
+
+Useful values available in the evaluation context include the following.
+
+``name``
+   Section name.
+``options``
+  The options for the current section.
+``buildout``
+  The buildout object.
+``stdlib_paths``
+  The list of the paths in the standard library.
+``egg_paths``
+  The list of standalone egg paths.
+``dir_paths``
+  The list of paths that might contain eggs, other packages or modules, or
+  .pth files.
+``all_paths``
+  A concatenation of all of the previously mentioned paths in the order of
+  egg_paths, dir_paths, and stdlib_paths.
+``paths``
+  A shorthand for ``all_paths``.
 
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
@@ -428,12 +541,17 @@ multi-line expression (see ``first-interpreted-option`` and
     ...                       silly-range = repr(range(5))
     ...                       first-interpreted-option
     ...                       message-reversed-is-egassem
+    ...                       my-name = name
+    ...                       paths-are-equivalent
+    ...                       
     ... first-interpreted-option = 
     ...     options['interpreted-options'].split()[0].strip()
     ... message-reversed-is-egassem=
     ...     ''.join(
     ...         reversed(
     ...             buildout['buildout']['parts']))
+    ... paths-are-equivalent=
+    ...     repr((egg_paths + dir_paths + stdlib_paths) == paths)
     ... not-interpreted=hello world
     ...
     ... find-links = %(server)s
@@ -448,6 +566,8 @@ multi-line expression (see ``first-interpreted-option`` and
     ... silly-range: ${silly-range}
     ... first-interpreted-option: ${first-interpreted-option}
     ... message-reversed-is-egassem: ${message-reversed-is-egassem}
+    ... my-name: ${my-name}
+    ... paths-are-equivalent: ${paths-are-equivalent}
     ... """)
 
     >>> print system(buildout)
@@ -461,4 +581,5 @@ multi-line expression (see ``first-interpreted-option`` and
     silly-range: [0, 1, 2, 3, 4]
     first-interpreted-option: duplicate-os-paths=(os.pathsep).join(paths)
     message-reversed-is-egassem: egassem
-
+    my-name: message
+    paths-are-equivalent: True

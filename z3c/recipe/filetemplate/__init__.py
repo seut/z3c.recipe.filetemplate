@@ -44,6 +44,7 @@ class FileTemplate(object):
         for key, value in defaults.items():
             self.options.setdefault(key, value)
         # set up paths for eggs, if given
+        all_paths = []
         if 'eggs' in self.options:
             relative_paths = self.options.get(
                 'relative-paths', 
@@ -60,15 +61,22 @@ class FileTemplate(object):
             include_site_packages = options.get(
                 'include-site-packages',
                 buildout['buildout']['include-site-packages'])
-            all_paths = zc.buildout.easy_install.get_path(
+            stdlib, egg_paths, dir_paths = zc.buildout.easy_install.get_path(
                 ws, self.options['executable'], self.eggs.extra_paths,
                 include_site_packages)
+            all_paths.extend(egg_paths)
+            all_paths.extend(dir_paths)
+            all_paths.extend(stdlib)
         else:
-            all_paths = []
-        paths = [path for path in all_paths if not path.endswith('.zip')]
-        self.options['os-paths'] = (os.pathsep).join(paths)
-        self.options['string-paths'] = ', '.join(repr(p) for p in all_paths)
-        self.options['space-paths'] = ' '.join(paths)
+            egg_paths = dir_paths = stdlib = []
+        for (path_name, paths) in (('paths', all_paths),
+                                   ('stdlib-paths', stdlib),
+                                   ('egg-paths', egg_paths),
+                                   ('dir-paths', dir_paths)):
+            self.options['os-%s' % (path_name,)] = (os.pathsep).join(paths)
+            self.options['string-%s' % (path_name,)] = ', '.join(
+                repr(p) for p in paths)
+            self.options['space-%s' % (path_name,)] = ' '.join(paths)
         # get and check the files to be created
         self.filenames = self.options.get('files', '*').split()
         self.source_dir = self.options.get('source-directory', '').strip()
@@ -163,7 +171,9 @@ class FileTemplate(object):
         if interpreted:
             globs = {'__builtins__': __builtins__, 'os': os, 'sys': sys}
             locs = {'name': name, 'options': options, 'buildout': buildout,
-                    'paths': paths, 'all_paths': all_paths}
+                    'paths': all_paths, 'all_paths': all_paths,
+                    'stdlib_paths': stdlib, 'egg_paths': egg_paths,
+                    'dir_paths': dir_paths}
             for value in interpreted.split('\n'):
                 if value:
                     value = value.split('=', 1)
