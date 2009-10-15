@@ -43,11 +43,14 @@ class FileTemplate(object):
             defaults.update(self.buildout[section_name])
         for key, value in defaults.items():
             self.options.setdefault(key, value)
+        python_section = options.get('python', buildout['buildout']['python'])
+        self.options.setdefault(
+            'executable', buildout[python_section]['executable'])
         # set up paths for eggs, if given
         all_paths = []
         if 'eggs' in self.options:
             relative_paths = self.options.get(
-                'relative-paths', 
+                'relative-paths',
                 buildout['buildout'].get('relative-paths', 'false')
                 )
             if relative_paths != 'false':
@@ -76,7 +79,14 @@ class FileTemplate(object):
             self.options['os-%s' % (path_name,)] = (os.pathsep).join(paths)
             self.options['string-%s' % (path_name,)] = ', '.join(
                 repr(p) for p in paths)
+            self.options['indented-%s' % (path_name,)] = ',\n    '.join(
+                repr(p) for p in paths)
             self.options['space-%s' % (path_name,)] = ' '.join(paths)
+        clean_sys_modules = zc.buildout.easy_install.get_clean_sys_modules(
+            self.options['executable'])
+        clean_sys_modules.sort()
+        self.options['clean-sys-modules'] = ',\n    '.join(
+                repr(name) for name in clean_sys_modules)
         # get and check the files to be created
         self.filenames = self.options.get('files', '*').split()
         self.source_dir = self.options.get('source-directory', '').strip()
@@ -173,7 +183,8 @@ class FileTemplate(object):
             locs = {'name': name, 'options': options, 'buildout': buildout,
                     'paths': all_paths, 'all_paths': all_paths,
                     'stdlib_paths': stdlib, 'egg_paths': egg_paths,
-                    'dir_paths': dir_paths}
+                    'dir_paths': dir_paths,
+                    'clean_sys_modules': clean_sys_modules,}
             for value in interpreted.split('\n'):
                 if value:
                     value = value.split('=', 1)

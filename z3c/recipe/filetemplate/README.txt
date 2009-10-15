@@ -267,11 +267,11 @@ the ``extends`` option.  For instance, consider the following buildout.
     ... """
     ... [buildout]
     ... parts = message
-    ... 
+    ...
     ... [template_defaults]
     ... mygreeting = Hi
     ... myaudience = World
-    ... 
+    ...
     ... [message]
     ... recipe = z3c.recipe.filetemplate
     ... files = helloworld.txt
@@ -309,49 +309,63 @@ be the paths for the paths for standalone eggs, "dir_paths" to be the
 paths for directories that might contain .pth files (like site-packages
 or directories added with extra-paths), and "all_paths" to be the
 combination of all three in the order of egg_paths, dir_paths, and
-stdlib_paths.  Then combine those with three variants: "os" paths,
-joined by os.pathsep; "string" paths, quoted paths separated by strings,
-suitable for Python lists; and "space" paths, joined by a space.  The
-results of the combination are defined roughly as given here.
+stdlib_paths.  Then combine those with four variants: "os" paths,
+joined by os.pathsep; "string" paths, quoted paths separated by commas,
+suitable for Python lists; "indented" paths, quoted paths each separated
+by a comma, newline, and a four space indent; and "space" paths, joined
+by a space.  The results of the combination are defined roughly as given
+here.
 
 ``os-paths``
   ``(os.pathsep).join(all_paths)``
-  
+
 ``string-paths``
   ``', '.join(repr(p) for p in all_paths)``
+
+``indented-paths``
+  ``',\n    '.join(repr(p) for p in all_paths)``
 
 ``space-paths``
   ``' '.join(all_paths)``
 
 ``os-stdlib-paths``
   ``(os.pathsep).join(stdlib_paths)``
-  
+
 ``string-stdlib-paths``
   ``', '.join(repr(p) for p in stdlib_paths)``
+
+``indented-stdlib-paths``
+  ``',\n    '.join(repr(p) for p in stdlib_paths)``
 
 ``space-stdlib-paths``
   ``' '.join(stdlib_paths)``
 
 ``os-egg-paths``
   ``(os.pathsep).join(egg_paths)``
-  
+
 ``string-egg-paths``
   ``', '.join(repr(p) for p in egg_paths)``
+
+``indented-egg-paths``
+  ``',\n    '.join(repr(p) for p in egg_paths)``
 
 ``space-egg-paths``
   ``' '.join(egg_paths)``
 
 ``os-dir-paths``
   ``(os.pathsep).join(dir_paths)``
-  
+
 ``string-dir-paths``
   ``', '.join(repr(p) for p in dir_paths)``
+
+``indented-dir-paths``
+  ``',\n    '.join(repr(p) for p in dir_paths)``
 
 ``space-dir-paths``
   ``' '.join(dir_paths)``
 
 (Note that you can work with the different path lists in different ways
-with the interpreted options described in the section below.)  
+with the interpreted options described in the section below.)
 
 For instance, consider this example.
 
@@ -359,7 +373,7 @@ For instance, consider this example.
     ... """
     ... [buildout]
     ... parts = message
-    ... 
+    ...
     ... [message]
     ... recipe = z3c.recipe.filetemplate
     ... files = helloworld.txt
@@ -379,6 +393,9 @@ For instance, consider this example.
     ... String paths:
     ... ${string-paths}
     ... ---
+    ... Indented paths:
+    ...     ${indented-paths}
+    ... ---
     ... Space paths:
     ... ${space-paths}
     ... ---
@@ -387,6 +404,9 @@ For instance, consider this example.
     ... ---
     ... String stdlib paths:
     ... ${string-stdlib-paths}
+    ... ---
+    ... Indented stdlib paths:
+    ...     ${indented-stdlib-paths}
     ... ---
     ... Space stdlib paths:
     ... ${space-stdlib-paths}
@@ -397,6 +417,9 @@ For instance, consider this example.
     ... String egg paths:
     ... ${string-egg-paths}
     ... ---
+    ... Indented egg paths:
+    ...     ${indented-egg-paths}
+    ... ---
     ... Space egg paths:
     ... ${space-egg-paths}
     ... ---
@@ -405,6 +428,9 @@ For instance, consider this example.
     ... ---
     ... String dir paths:
     ... ${string-dir-paths}
+    ... ---
+    ... Indented dir paths:
+    ...     ${indented-dir-paths}
     ... ---
     ... Space dir paths:
     ... ${space-dir-paths}
@@ -426,8 +452,14 @@ For instance, consider this example.
     String paths:
     '.../eggs/demo-0.2...egg', '.../eggs/demoneeded-1.2c1...egg', '...'
     ---
+    Indented paths:
+        '.../eggs/demo-0.2...egg',
+        '.../eggs/demoneeded-1.2c1...egg',
+        '...'
+    ---
     Space paths:
-    .../eggs/demo-0.2...egg .../eggs/demoneeded-1.2c1...egg ...
+    .../eggs/demo-0.2...egg .../eggs/demoneeded-1.2c1...egg
+    ...
 
 Notice that included multiple paths.  In fact, it includes the site packages
 and the standard library, so these are appropriate for entirely replacing
@@ -442,7 +474,7 @@ You can specify extra-paths as well, which will go at the end of the egg paths.
     ... """
     ... [buildout]
     ... parts = message
-    ... 
+    ...
     ... [message]
     ... recipe = z3c.recipe.filetemplate
     ... files = helloworld.txt
@@ -495,6 +527,34 @@ You can specify extra-paths as well, which will go at the end of the egg paths.
     Space dir paths:
      .../sample-buildout/foo ...
 
+Identifying clean sys.modules
+=============================
+
+Should you want it, the ``clean-sys-modules`` contains the names of the
+modules loaded when Python is started with -S.  They are quoted and indented,
+as would be useful in a Python collection.  This can be useful for
+writing scripts that need to be able to run as if site-packages were not
+loaded.
+
+    >>> write(sample_buildout, 'helloworld.txt.in',
+    ... """
+    ... Hello!  Here are the clean sys.modules.
+    ...     ${clean-sys-modules}
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    <BLANKLINE>
+
+    >>> cat(sample_buildout, 'helloworld.txt') # doctest:+ELLIPSIS
+    Hello!  Here are the clean sys.modules.
+        ...,
+        'os',
+        'os.path',
+        ...
+
+
 Defining options in Python
 ==========================
 
@@ -526,12 +586,14 @@ Useful values available in the evaluation context include the following.
   egg_paths, dir_paths, and stdlib_paths.
 ``paths``
   A shorthand for ``all_paths``.
+``clean_sys_modules``
+  The sys.modules names loaded when the executable is started with -S.
 
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
     ... [buildout]
     ... parts = message
-    ... 
+    ...
     ... [message]
     ... recipe = z3c.recipe.filetemplate
     ... files = helloworld.txt
@@ -543,8 +605,9 @@ Useful values available in the evaluation context include the following.
     ...                       message-reversed-is-egassem
     ...                       my-name = name
     ...                       paths-are-equivalent
-    ...                       
-    ... first-interpreted-option = 
+    ...                       sys-mods = repr(clean_sys_modules)
+    ...
+    ... first-interpreted-option =
     ...     options['interpreted-options'].split()[0].strip()
     ... message-reversed-is-egassem=
     ...     ''.join(
@@ -568,6 +631,7 @@ Useful values available in the evaluation context include the following.
     ... message-reversed-is-egassem: ${message-reversed-is-egassem}
     ... my-name: ${my-name}
     ... paths-are-equivalent: ${paths-are-equivalent}
+    ... sys-mods: ${sys-mods}
     ... """)
 
     >>> print system(buildout)
@@ -583,3 +647,4 @@ Useful values available in the evaluation context include the following.
     message-reversed-is-egassem: egassem
     my-name: message
     paths-are-equivalent: True
+    sys-mods: [..., 'os', 'os.path', ...]
