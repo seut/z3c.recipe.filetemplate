@@ -27,6 +27,8 @@ import zc.buildout.easy_install
 ABS_PATH_ERROR = ('%s is an absolute path. Paths must be '
                   'relative to the buildout directory.')
 
+TRUE_VALUES = ('yes', 'true', '1', 'on')
+
 class FileTemplate(object):
 
     def __init__(self, buildout, name, options):
@@ -190,7 +192,12 @@ class FileTemplate(object):
             if os.path.exists(
                 os.path.join(self.destination_dir, rel_path[:-3]))
             ]
-        if already_exists:
+        force_overwrite = self.options.get(
+            'force-overwrite', '').lower() in TRUE_VALUES
+        if already_exists and force_overwrite:
+            self.logger.info('Overwriting existing files: %s.',
+                 ', '.join(already_exists))
+        elif already_exists:
             self._user_error(
                 'Destinations already exist: %s. Please make sure that '
                 'you really want to generate these automatically.  Then '
@@ -220,4 +227,7 @@ class FileTemplate(object):
             self.options.created(path)
 
     def update(self):
-        pass
+        if self.options.get('force-overwrite', '').lower() in TRUE_VALUES:
+            return self.install()
+        else:
+            pass

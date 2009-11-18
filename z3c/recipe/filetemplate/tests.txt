@@ -14,7 +14,7 @@ the same time:
     ... """
     ... Hello ${world}!
     ... """)
-  
+
     >>> write(sample_buildout, 'goodbyeworld.txt.in',
     ... """
     ... Goodbye ${world}!
@@ -56,7 +56,7 @@ this invalid buildout configuration:
     ... files = /etc/passwd.in
     ... root = me
     ... """)
-  
+
     >>> print system(buildout)
     evil: /etc/passwd.in is an absolute path. Paths must be relative to the buildout directory.
     While:
@@ -80,7 +80,7 @@ for which no template can be found:
     ... recipe = z3c.recipe.filetemplate
     ... files = doesntexist
     ... """)
-  
+
     >>> print system(buildout)
     notthere: No template found for these file names: doesntexist.in
     While:
@@ -99,12 +99,12 @@ replace a file that's already there:
     ... """
     ... I'm already here
     ... """)
-  
+
     >>> write(sample_buildout, 'alreadyhere.txt.in',
     ... """
     ... I'm the template that's supposed to replace the file above.
     ... """)
-  
+
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
     ... [buildout]
@@ -127,6 +127,34 @@ replace a file that's already there:
            that you really want to generate these automatically.  Then move
            them away.
 
+If the option 'force-overwrite' is set, existing files will be
+overwritten.
+
+    >>> write(sample_buildout, 'alreadyhere.txt',
+    ... """
+    ... I'm already here
+    ... """)
+
+    >>> write(sample_buildout, 'alreadyhere.txt.in',
+    ... """
+    ... I'm the template that's supposed to replace the file above.
+    ... """)
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = alreadythere
+    ...
+    ... [alreadythere]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = alreadyhere.txt
+    ... force-overwrite = true
+    ... """)
+
+    >>> print system(buildout)
+    Installing alreadythere.
+    alreadythere: Overwriting existing files: alreadyhere.txt.
+
 Missing variables
 -----------------
 
@@ -137,7 +165,7 @@ that aren't defined in ``buildout.cfg``:
     ... """
     ... Hello ${world}!
     ... """)
-  
+
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
     ... [buildout]
@@ -147,8 +175,9 @@ that aren't defined in ``buildout.cfg``:
     ... recipe = z3c.recipe.filetemplate
     ... files = missing.txt
     ... """)
-  
+
     >>> print system(buildout)
+    Uninstalling alreadythere.
     Installing missing.
     While:
       Installing missing.
@@ -158,7 +187,7 @@ No changes means just an update
 -------------------------------
 
 If there are no changes in the buildout section, or in the files it will build,
-the recipe will update, which is a no-op.
+the recipe will update, which is a no-op by default.
 
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
@@ -175,6 +204,28 @@ the recipe will update, which is a no-op.
     Installing message.
     >>> print system(buildout)
     Updating message.
+
+The ``force-overwrite`` allows to re-create the destination files upon
+update.
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... files = helloworld.txt
+    ... world = Bert
+    ... force-overwrite = true
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> print system(buildout)
+    Updating message.
+    message: Overwriting existing files: helloworld.txt.
 
 Changes in a source directory cause a re-install
 ------------------------------------------------
@@ -316,7 +367,6 @@ At the start, we have the ``etc`` directory but not ``helloworld.cfg``.
 
     >>> ls(sample_buildout)
     -  .installed.cfg
-    -  alreadyhere.txt
     -  alreadyhere.txt.in
     d  bin
     -  buildout.cfg
@@ -352,7 +402,6 @@ Now the reverse is true.
 
     >>> ls(sample_buildout)
     -  .installed.cfg
-    -  alreadyhere.txt
     -  alreadyhere.txt.in
     d  bin
     -  buildout.cfg

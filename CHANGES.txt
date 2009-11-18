@@ -9,7 +9,8 @@ Changes
 Features
 --------
 
-- None yet.
+- Added the ``force-overwrite`` option to allow overwriting existing
+  files.
 
 
 2.0.3 (2009-07-02)
