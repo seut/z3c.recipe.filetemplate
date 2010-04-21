@@ -37,7 +37,7 @@ Features
   this time.
 
 - Support escaping ``${...}`` with ``$${...}`` in templates.  This is
-  particularly useful for *NIX shell scripts.
+  particularly useful for UNIX shell scripts.
 
 -----
 Fixes
