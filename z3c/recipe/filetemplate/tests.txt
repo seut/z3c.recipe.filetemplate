@@ -14,7 +14,7 @@ the same time:
     ... """
     ... Hello ${world}!
     ... """)
-  
+
     >>> write(sample_buildout, 'goodbyeworld.txt.in',
     ... """
     ... Goodbye ${world}!
@@ -56,7 +56,7 @@ this invalid buildout configuration:
     ... files = /etc/passwd.in
     ... root = me
     ... """)
-  
+
     >>> print system(buildout)
     evil: /etc/passwd.in is an absolute path. Paths must be relative to the buildout directory.
     While:
@@ -80,7 +80,7 @@ for which no template can be found:
     ... recipe = z3c.recipe.filetemplate
     ... files = doesntexist
     ... """)
-  
+
     >>> print system(buildout)
     notthere: No template found for these file names: doesntexist.in
     While:
@@ -99,12 +99,12 @@ replace a file that's already there:
     ... """
     ... I'm already here
     ... """)
-  
+
     >>> write(sample_buildout, 'alreadyhere.txt.in',
     ... """
     ... I'm the template that's supposed to replace the file above.
     ... """)
-  
+
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
     ... [buildout]
@@ -137,7 +137,7 @@ that aren't defined in ``buildout.cfg``:
     ... """
     ... Hello ${world}!
     ... """)
-  
+
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
     ... [buildout]
@@ -147,12 +147,13 @@ that aren't defined in ``buildout.cfg``:
     ... recipe = z3c.recipe.filetemplate
     ... files = missing.txt
     ... """)
-  
-    >>> print system(buildout)
+
+    >>> print system(buildout) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     Installing missing.
     While:
       Installing missing.
-    Error: Referenced option does not exist: missing world
+    Error: Option 'missing:world', referenced in line 2, col 7 of
+           .../sample-buildout/missing.txt.in, does not exist.
 
 No changes means just an update
 -------------------------------
@@ -365,3 +366,70 @@ Now the reverse is true.
     d  parts
     d  template
 
+Specifying files with relative paths at the buildout root
+---------------------------------------------------------
+
+Working at the buildout root follows some different code paths with relative
+paths so we explore those here.  We also evaluate paths at the directory root.
+
+    >>> rmdir(sample_buildout, 'template')
+    >>> mkdir(sample_buildout, 'template')
+    >>> write(sample_buildout, 'template', 'dosomething.py.in', '''\
+    ... #!${buildout:executable}
+    ... ${python-relative-path-setup}
+    ... root = ${buildout:directory|path-repr}
+    ... ''')
+
+    >>> write(sample_buildout, 'template', 'dosomething.sh.in', '''\
+    ... #!/bin/sh
+    ... ${shell-relative-path-setup}
+    ... cat ${buildout:directory|shell-path}
+    ... ''')
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ... relative-paths = true
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+
+    >>> cat(sample_buildout, 'dosomething.py') # doctest: +ELLIPSIS
+    #!...
+    import os, imp
+    # Get path to this file.
+    if __name__ == '__main__':
+        _z3c_recipe_filetemplate_filename = __file__
+    else:
+        # If this is an imported module, we want the location of the .py
+        # file, not the .pyc, because the .py file may have been symlinked.
+        _z3c_recipe_filetemplate_filename = imp.find_module(__name__)[1]
+    # Get the full, non-symbolic-link directory for this file.
+    _z3c_recipe_filetemplate_base = os.path.dirname(
+        os.path.abspath(os.path.realpath(_z3c_recipe_filetemplate_filename)))
+    # This is the buildout root.
+    def _z3c_recipe_filetemplate_path_repr(path):
+        "Return absolute version of buildout-relative path."
+        return os.path.join(_z3c_recipe_filetemplate_base, path)
+    <BLANKLINE>
+    root = _z3c_recipe_filetemplate_path_repr('.')
+
+    >>> cat(sample_buildout, 'dosomething.sh') # doctest: +ELLIPSIS
+    #!/bin/sh
+    # Get full, non-symbolic-link path to this file.
+    Z3C_RECIPE_FILETEMPLATE_FILENAME=`\
+        readlink -f "$0" 2>/dev/null || \
+        realpath "$0" 2>/dev/null || \
+        type -P "$0" 2>/dev/null`
+    # Get directory of file.
+    Z3C_RECIPE_FILETEMPLATE_BASE=`dirname ${Z3C_RECIPE_FILETEMPLATE_FILENAME}`
+    # This is the buildout root.
+    <BLANKLINE>
+    cat "$Z3C_RECIPE_FILETEMPLATE_BASE"/.

@@ -1,0 +1,7 @@
+.installed.cfg
+bin
+develop-eggs
+eggs
+parts
+z3c.recipe.filetemplate.egg-info
+dist

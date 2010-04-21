@@ -9,8 +9,50 @@ Changes
 Features
 --------
 
-- None yet.
+- Enable cross-platform paths by allowing an extended syntax for path
+  suffixes. Example: If ``${buildout:directory}`` resolves to
+  ``/sample_buildout`` on a POSIX system and ``C:\sample_buildout`` in
+  Windows, ``${buildout:directory/foo.txt}`` will resolve to
+  ``/sample_buildout/foo.txt`` and ``C:\sample_buildout\foo.txt``,
+  respectively.
 
+- Add filters via a pipe syntax, reminiscent of UNIX pipes or Django template
+  filters. Simple example: if ``${name}`` resolves to ``harry`` then
+  ``${name|upper}`` resolves to ``HARRY``.  Simple string filters are
+  upper, lower, title, and capitalize, just like the Python string
+  methods.  Also see the next bullet.
+
+- Added support for the buildout relative-paths option.  Shell scripts should
+  include ``${shell-relative-path-setup}`` before commands with
+  buildout-generated paths are executed.  Python scripts should use
+  ``${python-relative-path-setup}`` similarly.  ``${os-paths}`` (shell),
+  ``${space-paths}`` (shell), and ``${string-paths}`` (Python) will have
+  relative paths if the buildout relative-paths option is used.  To convert
+  individual absolute paths to relative paths, use the ``path-repr`` filter
+  in Python scripts and the ``shell-path`` filter in shell scripts.  Path
+  suffixes can be combined with these filters, so, if buildout's
+  relative-paths option is true, ``${buildout:directory/foo.txt|path-repr}``
+  will produce a buildout-relative, platform appropriate path to
+  foo.txt.  Note that for shell scripts, Windows is not supported at
+  this time.
+
+- Support escaping ``${...}`` with ``$${...}`` in templates.  This is
+  particularly useful for *NIX shell scripts.
+
+-----
+Fixes
+-----
+
+- Make tests less susceptible to timing errors.
+
+-------
+Changes
+-------
+
+- ``${os-paths}`` and ``${space-paths}`` no longer filter out .zip paths.
+
+- The entries in ``${string-paths}`` now are separated by newlines. Each
+  entry is indented to the level of the initial placement of the marker.
 
 2.0.3 (2009-07-02)
 ==================
