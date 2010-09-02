@@ -45,6 +45,12 @@ setup(name='z3c.recipe.filetemplate',
                         'zc.buildout',
                         'zc.recipe.egg',
                         ],
+      extras_require = dict(
+          test = [
+              'zope.testing',
+              'z3c.recipe.scripts',
+              ]
+          ),
       zip_safe=True,
       entry_points="""
       [zc.buildout]

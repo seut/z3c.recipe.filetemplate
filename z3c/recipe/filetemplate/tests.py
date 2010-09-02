@@ -12,11 +12,11 @@
 #
 ##############################################################################
 
+import doctest
 import os
 import time
 import zc.buildout.testing
 import zc.buildout.tests
-from zope.testing import doctest
 
 
 def update_file(dir, *args):

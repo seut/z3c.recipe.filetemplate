@@ -2,7 +2,7 @@
 Changes
 =======
 
-2.1.0 (Unreleased)
+2.1.1 (Unreleased)
 ==================
 
 --------
@@ -12,6 +12,15 @@ Features
 -----
 Fixes
 -----
+
+- Added undeclared but necessary test dependency on `zope.testing` in a
+  test extra.
+
+- Added test dependency on `z3c.recipe.scripts` as it is required by newer
+  `zc.buildout` versions.
+
+- Using python's `doctest` module instead of deprecated
+  `zope.testing.doctest`.
 
 2.1.0 (2010-04-21)
 ==================
