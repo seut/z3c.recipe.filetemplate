@@ -2,12 +2,15 @@
 Changes
 =======
 
-2.1.1 (Unreleased)
+2.2.0 (2011-09-01)
 ==================
 
 --------
 Features
 --------
+
+- Add support for excluding some subdirectories of the ``source-directory``
+  with the ``exclude-directories`` option.  [Bruno Binet]
 
 -----
 Fixes

@@ -77,6 +77,7 @@ class FileTemplate(object):
         # get and check the files to be created
         self.filenames = self.options.get('files', '*').split()
         self.source_dir = self.options.get('source-directory', '').strip()
+        self.exclude_dirs = self.options.get('exclude-directories', '').split()
         here = zc.buildout.easy_install.realpath(
             self.buildout['buildout']['directory'])
         self.destination_dir = here
@@ -111,6 +112,10 @@ class FileTemplate(object):
         if self.recursive:
             def visit(ignored, dirname, names):
                 relative_prefix = dirname[len(self.source_dir)+1:]
+                if relative_prefix in self.exclude_dirs:
+                    # exclude current directory and its subdirectories
+                    del names[:]
+                    return
                 file_info = {}
                 for name in names:
                     val = os.path.join(relative_prefix, name)

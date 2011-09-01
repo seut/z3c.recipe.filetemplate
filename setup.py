@@ -19,7 +19,7 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 setup(name='z3c.recipe.filetemplate',
-      version = '2.1.1dev',
+      version = '2.2.0',
       license='ZPL 2.1',
       url='http://pypi.python.org/pypi/z3c.recipe.filetemplate',
       description="zc.buildout recipe for creating files from file templates",

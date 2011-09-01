@@ -106,7 +106,8 @@ the source folder.  Here is an example.
 
 First, we specify a ``source-directory`` in the buildout.  You can specify
 ``files`` as a filter if desired, but by default it will find any file (ending
-with ".in").
+with ".in"). You can also specify ``exclude-directories`` option if you want
+to exclude some paths from the ``source-directory`` search path.
 
     >>> write(sample_buildout, 'buildout.cfg',
     ... """
@@ -223,6 +224,45 @@ Therefore, if we only build .sh files, the etc directory will disappear.
 
 Also note that, if you use a source directory and your ``files`` specify a
 directory, the directory must match precisely.
+
+With the ``exclude-directories`` parameter, we specify one or more directories
+(separated by whitespace) in which the recipe will not look for template
+files. The ``exclude-directories`` option should be used along with the
+``source-directory`` option.
+Therefore, if we set ``exclude-directories`` to ``bin``, the
+``bin/helloworld.sh`` file will disappear.
+
+    >>> write(sample_buildout, 'buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = message
+    ...
+    ... [message]
+    ... recipe = z3c.recipe.filetemplate
+    ... source-directory = template
+    ... exclude-directories = bin
+    ... world = Philipp
+    ... """)
+
+    >>> print system(buildout)
+    Uninstalling message.
+    Installing message.
+    >>> ls(sample_buildout)
+    -  .installed.cfg
+    d  bin
+    -  buildout.cfg
+    d  develop-eggs
+    d  eggs
+    d  etc
+    -  helloworld.txt.in
+    d  parts
+    d  template
+
+    >>> ls(sample_buildout, 'etc')
+    - helloworld.conf
+
+    >>> ls(sample_buildout, 'bin')
+    - buildout
 
     >>> # Clean up for later test.
     >>> import shutil
