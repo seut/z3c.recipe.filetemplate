@@ -93,7 +93,8 @@ class FileTemplate(object):
         else:
             self.recursive = False
             self.options['source-directory'] = ''
-            self.source_dir = self.buildout['buildout']['directory']
+            self.source_dir = zc.buildout.easy_install.realpath(
+                os.path.normpath(self.buildout['buildout']['directory']))
         source_patterns = []
         for filename in self.filenames:
             if os.path.isabs(filename):

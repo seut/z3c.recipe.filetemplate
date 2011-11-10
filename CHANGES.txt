@@ -15,7 +15,7 @@ Features
 Fixes
 -----
 
-(none)
+- Fix handling of the template path check under windows. [rossp]
 
 2.2.0 (2011-09-01)
 ==================
