@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2007-2009 Zope Corporation and Contributors.
+# Copyright (c) 2007-2009 Zope Foundation and Contributors.
 # All Rights Reserved.
 #
 # This software is subject to the provisions of the Zope Public License,
@@ -19,7 +19,7 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 setup(name='z3c.recipe.filetemplate',
-      version = '2.1dev',
+      version = '2.2.1dev',
       license='ZPL 2.1',
       url='http://pypi.python.org/pypi/z3c.recipe.filetemplate',
       description="zc.buildout recipe for creating files from file templates",
@@ -45,6 +45,12 @@ setup(name='z3c.recipe.filetemplate',
                         'zc.buildout',
                         'zc.recipe.egg',
                         ],
+      extras_require = dict(
+          test = [
+              'zope.testing',
+              'z3c.recipe.scripts',
+              ]
+          ),
       zip_safe=True,
       entry_points="""
       [zc.buildout]
